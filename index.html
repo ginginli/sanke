@@ -3,63 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
+    <title>Snake Game Unblocked</title>
     <style>
         body{margin:0 auto;max-width:1200px;padding:10px;text-align:center}
-        #game{width:100%;height:600px;border:0;margin:10px 0}
-        button{padding:8px 16px;margin:5px;cursor:pointer}
+        .game-container {margin: 20px auto;max-width: 500px;}
+        iframe {margin: 20px 0;box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+        
+        /* 导航栏样式 */
+        nav {
+            background-color: #333;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        nav h1 {
+            color: white;
+            margin: 0;
+            margin-bottom: 15px;
+        }
+        nav div {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
+        }
+        nav a:hover {
+            background-color: #555;
+            border-radius: 3px;
+        }
     </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K16FX5SH1Y"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-K16FX5SH1Y');
+    </script>
 </head>
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-K16FX5SH1Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-K16FX5SH1Y');
-</script>
-
 <body>
-    <h1>Snake Game Unblocked</h1>
-    <div id="game"></div>
+    <!-- 导航栏 -->
+    <nav>
+        <h1>Snake Game Unblocked</h1>
+        <div>
+            <a href="#new">New</a>
+            <a href="#popular">Popular</a>
+            <a href="#2player">2 Player</a>
+            <a href="#more">More</a>
+        </div>
+    </nav>
 
-    <script>
-        // 多个备用游戏源
-        const games = [
-            'https://slither.io',
-        ];
+    <!-- 游戏区域 -->
+    <div class="game-container">
+        <iframe 
+            src="https://scratch.mit.edu/projects/226445813/embed" 
+            allowtransparency="true" 
+            width="485" 
+            height="402" 
+            frameborder="0" 
+            scrolling="no" 
+            allowfullscreen>
+        </iframe>
+    </div>
 
-        let currentIndex = 0;
+    <!-- 新游戏推荐 -->
+    <section>
+        <h2>New Games</h2>
+        <div>
+            <!-- 这里需要游戏列表数据 -->
+            <p>需要游戏列表数据来展示新游戏</p>
+        </div>
+    </section>
 
-        function loadGame(index) {
-            const gameContainer = document.getElementById('game');
-            const iframe = document.createElement('iframe');
-            
-            iframe.src = games[index];
-            iframe.style.width = '100%';
-            iframe.style.height = '600px';
-            iframe.style.border = 'none';
-            iframe.allowFullscreen = true;
-            
-            // 错误处理：如果加载失败，自动切换到下一个源
-            iframe.onerror = () => {
-                currentIndex = (currentIndex + 1) % games.length;
-                loadGame(currentIndex);
-            };
+    <!-- 热门游戏 -->
+    <section>
+        <h2>Popular Games</h2>
+        <div>
+            <!-- 这里需要游戏列表数据 -->
+            <p>需要游戏列表数据来展示热门游戏</p>
+        </div>
+    </section>
 
-            gameContainer.innerHTML = '';
-            gameContainer.appendChild(iframe);
-        }
-
-        function switchGame() {
-            currentIndex = (currentIndex + 1) % games.length;
-            loadGame(currentIndex);
-        }
-
-        // 初始加载
-        loadGame(0);
-    </script>
+    <!-- 页脚 -->
+    <footer>
+        <p>Snake Game Unblocked - <a href="/dmca.html">DMCA</a></p>
+    </footer>
 </body>
 </html> 
