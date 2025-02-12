@@ -34,8 +34,19 @@ const gameElements = {
     ctx: null,
     settingsBtn: null,
     settingsPanel: null,
-    speedValue: null,
-    // ... 其他元素
+    speedValue: null
+};
+
+// 添加缓存和优化相关的变量
+const cache = {
+    background: null,    // 缓存背景
+    gridPattern: null,   // 缓存网格
+    colors: {           // 缓存颜色
+        background: '#2c3e50',
+        grid: '#34495e',
+        snake: new Array(50).fill(0).map((_, i) => `hsla(${120 + i * 2}, 70%, 50%, ${1 - i * 0.05})`),
+        food: '#e74c3c'
+    }
 };
 
 // 加载设置
@@ -186,7 +197,156 @@ function handleKeyPress(event) {
     }
 }
 
-// 更新游戏状态
+// 添加节流函数
+function throttle(func, limit) {
+    let inThrottle;
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    }
+}
+
+// 创建和缓存背景
+function createBackground() {
+    if (!gameElements.canvas) return;
+    
+    // 创建离屏canvas
+    cache.background = document.createElement('canvas');
+    cache.background.width = gameElements.canvas.width;
+    cache.background.height = gameElements.canvas.height;
+    const bgCtx = cache.background.getContext('2d');
+    
+    // 绘制棋盘格背景
+    for (let i = 0; i < gridWidth; i++) {
+        for (let j = 0; j < gridHeight; j++) {
+            bgCtx.fillStyle = (i + j) % 2 === 0 ? cache.colors.grid : cache.colors.background;
+            bgCtx.fillRect(i * gridSize, j * gridSize, gridSize, gridSize);
+        }
+    }
+    
+    // 绘制网格线
+    bgCtx.strokeStyle = 'rgba(52, 73, 94, 0.5)';
+    bgCtx.lineWidth = 0.5;
+    bgCtx.beginPath();
+    for (let i = 0; i <= gridWidth; i++) {
+        bgCtx.moveTo(i * gridSize, 0);
+        bgCtx.lineTo(i * gridSize, gameElements.canvas.height);
+    }
+    for (let j = 0; j <= gridHeight; j++) {
+        bgCtx.moveTo(0, j * gridSize);
+        bgCtx.lineTo(gameElements.canvas.width, j * gridSize);
+    }
+    bgCtx.stroke();
+}
+
+// 优化的碰撞检测
+function checkCollision(head) {
+    // 创建网格映射加速碰撞检测
+    const gridMap = new Set(
+        snake.slice(1).map(segment => `${segment.x},${segment.y}`)
+    );
+    
+    // 边界检测
+    switch(borderMode) {
+        case 'wrap':
+            head.x = (head.x + gridWidth) % gridWidth;
+            head.y = (head.y + gridHeight) % gridHeight;
+            return false;
+        case 'bounce':
+            if (head.x < 0 || head.x >= gridWidth) {
+                head.x = Math.max(0, Math.min(head.x, gridWidth - 1));
+                newDirection = direction === 'left' ? 'right' : 'left';
+                return false;
+            }
+            if (head.y < 0 || head.y >= gridHeight) {
+                head.y = Math.max(0, Math.min(head.y, gridHeight - 1));
+                newDirection = direction === 'up' ? 'down' : 'up';
+                return false;
+            }
+            return false;
+        default:
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+                return true;
+            }
+    }
+    
+    // 使用Set检查自身碰撞
+    return gridMap.has(`${head.x},${head.y}`);
+}
+
+// 节流后的存储操作
+const throttledSaveState = throttle(function() {
+    const gameState = {
+        snake: snake,
+        food: food,
+        score: score,
+        direction: direction
+    };
+    localStorage.setItem('gameState', JSON.stringify(gameState));
+}, 1000);  // 每秒最多保存一次
+
+// 优化的绘制函数
+function drawGame() {
+    const ctx = gameElements.ctx;
+    const canvas = gameElements.canvas;
+    
+    if (!ctx || !canvas) return;
+
+    // 使用缓存的背景
+    if (!cache.background) {
+        createBackground();
+    }
+    ctx.drawImage(cache.background, 0, 0);
+
+    // 绘制蛇（使用缓存的颜色）
+    snake.forEach((segment, index) => {
+        ctx.fillStyle = cache.colors.snake[index] || cache.colors.snake[cache.colors.snake.length - 1];
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+    });
+
+    // 绘制食物
+    ctx.fillStyle = cache.colors.food;
+    ctx.beginPath();
+    const centerX = (food.x * gridSize) + (gridSize / 2);
+    const centerY = (food.y * gridSize) + (gridSize / 2);
+    ctx.arc(centerX, centerY, gridSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 绘制分数
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Score: ${score}`, 10, 30);
+    ctx.fillText(`High Score: ${highScore}`, 10, 60);
+
+    // 绘制暂停菜单
+    if (isPaused) {
+        drawPauseMenu();
+    }
+}
+
+// 分离暂停菜单绘制
+function drawPauseMenu() {
+    const ctx = gameElements.ctx;
+    const canvas = gameElements.canvas;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = '48px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSED', canvas.width/2, canvas.height/2 - 50);
+    
+    ctx.font = '24px Arial';
+    ctx.fillText(`Current Score: ${score}`, canvas.width/2, canvas.height/2);
+    ctx.fillText('Press ESC to Continue', canvas.width/2, canvas.height/2 + 50);
+}
+
+// 修改updateGame函数中的存储调用
 function updateGame() {
     if (isPaused) return;
     
@@ -203,6 +363,11 @@ function updateGame() {
 
     // 检查碰撞
     if (checkCollision(head)) {
+        // 保存最高分
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('snakeHighScore', highScore);
+        }
         gameOver();
         return;
     }
@@ -217,159 +382,13 @@ function updateGame() {
         // 加快游戏速度
         if (gameSpeed > 50) {
             gameSpeed -= 2;
-            clearInterval(gameLoop);
-            gameLoop = setInterval(updateGame, gameSpeed);
         }
     } else {
         snake.pop();
     }
 
-    // 更新最高分
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('snakeHighScore', highScore);
-    }
-
-    // 优化渲染
-    window.requestAnimationFrame(drawGame);
-}
-
-// 检查碰撞
-function checkCollision(head) {
-    // 根据边界模式处理碰撞
-    switch(borderMode) {
-        case 'wrap':
-            // 穿墙模式
-            head.x = (head.x + gridWidth) % gridWidth;
-            head.y = (head.y + gridHeight) % gridHeight;
-            return false;
-        case 'bounce':
-            // 反弹模式
-            if (head.x < 0) {
-                head.x = 0;
-                newDirection = direction === 'left' ? 'right' : direction;
-            } else if (head.x >= gridWidth) {
-                head.x = gridWidth - 1;
-                newDirection = direction === 'right' ? 'left' : direction;
-            }
-            if (head.y < 0) {
-                head.y = 0;
-                newDirection = direction === 'up' ? 'down' : direction;
-            } else if (head.y >= gridHeight) {
-                head.y = gridHeight - 1;
-                newDirection = direction === 'down' ? 'up' : direction;
-            }
-            return false;
-        default:
-            // 死亡模式
-            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
-                return true;
-            }
-    }
-    
-    // 检查自身碰撞
-    return snake.some((segment, index) => {
-        if (index === 0) return false;
-        return segment.x === head.x && segment.y === head.y;
-    });
-}
-
-// 绘制游戏
-function drawGame() {
-    // 清空画布
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 绘制棋盘格背景
-    for (let i = 0; i < gridWidth; i++) {
-        for (let j = 0; j < gridHeight; j++) {
-            // 交替深浅色
-            ctx.fillStyle = (i + j) % 2 === 0 ? '#34495e' : '#2c3e50';
-            ctx.fillRect(i * gridSize, j * gridSize, gridSize, gridSize);
-        }
-    }
-
-    // 绘制细网格线
-    ctx.strokeStyle = 'rgba(52, 73, 94, 0.5)';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i <= gridWidth; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * gridSize, 0);
-        ctx.lineTo(i * gridSize, canvas.height);
-        ctx.stroke();
-    }
-    for (let j = 0; j <= gridHeight; j++) {
-        ctx.beginPath();
-        ctx.moveTo(0, j * gridSize);
-        ctx.lineTo(canvas.width, j * gridSize);
-        ctx.stroke();
-    }
-
-    // 显示坐标
-    if (showCoordinates) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        
-        // 显示横坐标
-        for (let i = 0; i < gridWidth; i++) {
-            ctx.fillText(i, i * gridSize + gridSize/2, gridSize/3);
-        }
-        
-        // 显示纵坐标
-        ctx.textAlign = 'right';
-        for (let j = 0; j < gridHeight; j++) {
-            ctx.fillText(j, gridSize/2, j * gridSize + gridSize/2);
-        }
-        
-        // 显示蛇头坐标
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillText(`(${snake[0].x},${snake[0].y})`, 
-            snake[0].x * gridSize + gridSize/2, 
-            snake[0].y * gridSize - 5);
-    }
-
-    // 绘制蛇身（带编号）
-    drawSnake();
-
-    // 绘制食物
-    ctx.fillStyle = '#e74c3c';
-    ctx.beginPath();
-    const centerX = (food.x * gridSize) + (gridSize / 2);
-    const centerY = (food.y * gridSize) + (gridSize / 2);
-    ctx.arc(centerX, centerY, gridSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 显示分数
-    ctx.fillStyle = '#fff';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Score: ${score}`, 10, 30);
-    ctx.fillText(`High Score: ${highScore}`, 10, 60);
-
-    // 如果游戏暂停，显示暂停菜单
-    if (isPaused) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = '#fff';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('PAUSED', canvas.width/2, canvas.height/2 - 50);
-        
-        ctx.font = '24px Arial';
-        ctx.fillText(`Current Score: ${score}`, canvas.width/2, canvas.height/2);
-        ctx.fillText('Press ESC to Continue', canvas.width/2, canvas.height/2 + 50);
-    }
-}
-
-// 添加平滑移动效果
-function drawSnake() {
-    snake.forEach((segment, index) => {
-        const alpha = 1 - (index * 0.05);  // 渐变透明度
-        ctx.fillStyle = `hsla(${120 + index * 2}, 70%, 50%, ${alpha})`;
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
-    });
+    // 使用节流后的存储
+    throttledSaveState();
 }
 
 // 游戏结束
@@ -520,6 +539,8 @@ function addSettingsOptions() {
 
 // 游戏循环
 function gameLoop(timestamp) {
+    if (!gameElements.ctx || !gameElements.canvas) return;
+    
     if (isPaused) return;
 
     if (!lastFrameTime) {
@@ -533,27 +554,21 @@ function gameLoop(timestamp) {
         updateGame();
     }
     
-    // 每帧都重绘
     drawGame();
-    
-    // 继续循环
     requestAnimationFrame(gameLoop);
 }
 
 // 修改初始化函数
 function init() {
     // 初始化DOM元素
-    initElements();
-    
-    // 设置画布
-    if (!gameElements.canvas) {
-        console.error('Canvas element not found');
+    if (!initElements()) {
+        console.error('Failed to initialize game elements');
         return;
     }
     
+    // 设置画布尺寸
     resizeCanvas();
-    gameElements.ctx = gameElements.canvas.getContext('2d');
-
+    
     // 初始化游戏状态
     snake = [
         {x: 5, y: 5},
@@ -580,9 +595,12 @@ function init() {
     // 添加事件监听
     document.addEventListener('keydown', handleKeyPress);
     window.addEventListener('resize', resizeCanvas);
-    gameElements.canvas.addEventListener('touchstart', handleTouchStart, false);
-    gameElements.canvas.addEventListener('touchmove', handleTouchMove, false);
+    canvas.addEventListener('touchstart', handleTouchStart, false);
+    canvas.addEventListener('touchmove', handleTouchMove, false);
 
+    // 立即进行第一次渲染
+    drawGame();
+    
     // 开始游戏循环
     lastFrameTime = 0;
     requestAnimationFrame(gameLoop);
@@ -603,22 +621,29 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 
 // 在初始化时获取元素
 function initElements() {
+    // 获取canvas元素
     gameElements.canvas = document.getElementById('canvas1');
+    if (!gameElements.canvas) {
+        console.error('Canvas element not found');
+        return false;
+    }
+    
+    // 获取canvas上下文
     gameElements.ctx = gameElements.canvas.getContext('2d');
+    if (!gameElements.ctx) {
+        console.error('Could not get canvas context');
+        return false;
+    }
+    
+    // 同时更新全局变量
+    canvas = gameElements.canvas;
+    ctx = gameElements.ctx;
+    
+    // 获取其他元素
     gameElements.settingsBtn = document.getElementById('settingsBtn');
     gameElements.settingsPanel = document.getElementById('settingsPanel');
-    // ... 获取其他元素
-}
-
-// 添加游戏状态保存
-function saveGameState() {
-    const gameState = {
-        snake: snake,
-        food: food,
-        score: score,
-        direction: direction
-    };
-    localStorage.setItem('gameState', JSON.stringify(gameState));
+    
+    return true;
 }
 
 // 添加游戏状态恢复
