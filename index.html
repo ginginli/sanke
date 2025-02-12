@@ -5,21 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game Unblocked</title>
     <style>
-        body{margin:0 auto;max-width:1200px;padding:10px;text-align:center}
+        body {
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 10px;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
         .game-container {
             margin: 20px auto;
-            max-width: 1000px;
+            max-width: 800px;
             width: 100%;
             aspect-ratio: 1/1;
             position: relative;
-        }
-        .game-container iframe {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background: #fff;
             border-radius: 8px;
-            background: #f5f5f5;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        canvas {
+            border-radius: 8px;
         }
         
         /* 导航栏样式 */
@@ -27,6 +32,7 @@
             background-color: #333;
             padding: 15px;
             margin-bottom: 20px;
+            border-radius: 8px;
         }
         nav h1 {
             color: white;
@@ -48,20 +54,7 @@
             border-radius: 3px;
         }
         
-        /* 优化加载提示样式 */
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            z-index: 1000;
-        }
-        
-        /* 添加控制按钮的样式 */
+        /* 控制按钮样式 */
         .control-panel button {
             width: 50px;
             height: 50px;
@@ -77,6 +70,7 @@
             background: rgba(255, 255, 255, 0.3);
         }
         
+        /* 设置面板样式 */
         .setting-item {
             margin: 10px 0;
         }
@@ -84,6 +78,28 @@
         .setting-item label {
             display: inline-block;
             width: 150px;
+        }
+
+        /* 游戏说明样式 */
+        .game-description {
+            max-width: 800px;
+            margin: 30px auto;
+            text-align: left;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* FAQ样式 */
+        .faq-section {
+            max-width: 800px;
+            margin: 30px auto;
+            text-align: left;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
     </style>
 

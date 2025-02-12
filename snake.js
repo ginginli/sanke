@@ -11,20 +11,31 @@ let gameLoop;
 let gameSpeed = 100;
 let gridSize = 20;
 let gridWidth, gridHeight;
-let touchStartX = 0;
-let touchStartY = 0;
+let touchStartX = null;
+let touchStartY = null;
 let borderMode = 'die';  // 边界模式
 let showCoordinates = true; // 显示坐标
 let isPaused = false;    // 暂停状态
 let fps = 60;               // 目标帧率
 let lastFrameTime = 0;      // 上一帧时间
 let frameInterval = 1000/fps; // 帧间隔
+const MIN_SWIPE = 30;  // 最小滑动距离
 
 // 设置的默认值
 const defaultSettings = {
     gameSpeed: 100,
     gridSize: 20,
     borderMode: 'die'
+};
+
+// 缓存常用DOM元素
+const gameElements = {
+    canvas: null,
+    ctx: null,
+    settingsBtn: null,
+    settingsPanel: null,
+    speedValue: null,
+    // ... 其他元素
 };
 
 // 加载设置
@@ -99,11 +110,13 @@ function initGame() {
 
 // 自适应屏幕大小
 function resizeCanvas() {
+    if (!gameElements.canvas) return;
+    
     const maxSize = Math.min(window.innerWidth - 20, window.innerHeight - 100);
-    canvas.width = Math.floor(maxSize / gridSize) * gridSize;
-    canvas.height = canvas.width;
-    gridWidth = Math.floor(canvas.width / gridSize);
-    gridHeight = Math.floor(canvas.height / gridSize);
+    gameElements.canvas.width = Math.floor(maxSize / gridSize) * gridSize;
+    gameElements.canvas.height = gameElements.canvas.width;
+    gridWidth = Math.floor(gameElements.canvas.width / gridSize);
+    gridHeight = Math.floor(gameElements.canvas.height / gridSize);
 }
 
 // 触摸控制
@@ -114,28 +127,23 @@ function handleTouchStart(evt) {
 }
 
 function handleTouchMove(evt) {
-    evt.preventDefault();
     if (!touchStartX || !touchStartY) return;
-
-    const touchEndX = evt.touches[0].clientX;
-    const touchEndY = evt.touches[0].clientY;
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    // 判断滑动方向
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // 水平滑动
-        if (deltaX > 0 && direction !== 'left') newDirection = 'right';
-        else if (deltaX < 0 && direction !== 'right') newDirection = 'left';
-    } else {
-        // 垂直滑动
-        if (deltaY > 0 && direction !== 'up') newDirection = 'down';
-        else if (deltaY < 0 && direction !== 'down') newDirection = 'up';
+    
+    const deltaX = evt.touches[0].clientX - touchStartX;
+    const deltaY = evt.touches[0].clientY - touchStartY;
+    
+    if (Math.abs(deltaX) > MIN_SWIPE || Math.abs(deltaY) > MIN_SWIPE) {
+        // 处理方向变化
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newDirection = deltaX > 0 ? 'right' : 'left';
+        } else {
+            newDirection = deltaY > 0 ? 'down' : 'up';
+        }
+        
+        // 重置触摸起点
+        touchStartX = null;
+        touchStartY = null;
     }
-
-    touchStartX = null;
-    touchStartY = null;
 }
 
 // 创建食物
@@ -322,20 +330,7 @@ function drawGame() {
     }
 
     // 绘制蛇身（带编号）
-    snake.forEach((segment, index) => {
-        // 渐变颜色
-        const hue = (120 + index * 2) % 360;
-        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
-        
-        // 添加序号
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(index + 1, 
-            segment.x * gridSize + gridSize/2, 
-            segment.y * gridSize + gridSize/2 + 3);
-    });
+    drawSnake();
 
     // 绘制食物
     ctx.fillStyle = '#e74c3c';
@@ -366,6 +361,15 @@ function drawGame() {
         ctx.fillText(`Current Score: ${score}`, canvas.width/2, canvas.height/2);
         ctx.fillText('Press ESC to Continue', canvas.width/2, canvas.height/2 + 50);
     }
+}
+
+// 添加平滑移动效果
+function drawSnake() {
+    snake.forEach((segment, index) => {
+        const alpha = 1 - (index * 0.05);  // 渐变透明度
+        ctx.fillStyle = `hsla(${120 + index * 2}, 70%, 50%, ${alpha})`;
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+    });
 }
 
 // 游戏结束
@@ -421,22 +425,30 @@ function resumeGame() {
 
 // 在init函数末尾添加设置面板的事件监听
 function initSettingsPanel() {
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    
+    if (!settingsBtn || !settingsPanel) {
+        console.error('Settings elements not found');
+        return;
+    }
+    
     // 设置按钮点击事件
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-        document.getElementById('settingsPanel').style.display = 'block';
+    settingsBtn.addEventListener('click', () => {
+        settingsPanel.style.display = 'block';
         pauseGame();
     });
     
     // 关闭按钮点击事件
     document.getElementById('closeSettings').addEventListener('click', () => {
-        document.getElementById('settingsPanel').style.display = 'none';
+        settingsPanel.style.display = 'none';
         resumeGame();
     });
     
     // 保存按钮点击事件
     document.getElementById('saveSettings').addEventListener('click', () => {
         saveSettings();
-        document.getElementById('settingsPanel').style.display = 'none';
+        settingsPanel.style.display = 'none';
         resumeGame();
     });
     
@@ -506,41 +518,117 @@ function addSettingsOptions() {
     });
 }
 
-// 优化游戏循环
+// 游戏循环
 function gameLoop(timestamp) {
-    if (!isPaused) {
-        if (!lastFrameTime) lastFrameTime = timestamp;
-        
-        const elapsed = timestamp - lastFrameTime;
-        
-        if (elapsed > frameInterval) {
-            lastFrameTime = timestamp - (elapsed % frameInterval);
-            updateGame();
-        }
-        
-        requestAnimationFrame(gameLoop);
+    if (isPaused) return;
+
+    if (!lastFrameTime) {
+        lastFrameTime = timestamp;
     }
+    
+    const elapsed = timestamp - lastFrameTime;
+    
+    if (elapsed >= gameSpeed) {
+        lastFrameTime = timestamp;
+        updateGame();
+    }
+    
+    // 每帧都重绘
+    drawGame();
+    
+    // 继续循环
+    requestAnimationFrame(gameLoop);
 }
 
 // 修改初始化函数
 function init() {
-    // 保持现有的初始化代码...
+    // 初始化DOM元素
+    initElements();
     
-    // 加载保存的设置
+    // 设置画布
+    if (!gameElements.canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
+    
+    resizeCanvas();
+    gameElements.ctx = gameElements.canvas.getContext('2d');
+
+    // 初始化游戏状态
+    snake = [
+        {x: 5, y: 5},
+        {x: 4, y: 5},
+        {x: 3, y: 5}
+    ];
+    
+    direction = 'right';
+    newDirection = 'right';
+    score = 0;
+    isPaused = false;
+
+    // 创建食物
+    createFood();
+    
+    // 加载设置
     loadSettings();
     
-    // 初始化设置面板
+    // 初始化界面
     initSettingsPanel();
-    
-    // 添加控制按钮
     addControlButtons();
-    
-    // 添加设置选项
     addSettingsOptions();
-    
-    // 使用requestAnimationFrame启动游戏循环
+
+    // 添加事件监听
+    document.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('resize', resizeCanvas);
+    gameElements.canvas.addEventListener('touchstart', handleTouchStart, false);
+    gameElements.canvas.addEventListener('touchmove', handleTouchMove, false);
+
+    // 开始游戏循环
+    lastFrameTime = 0;
     requestAnimationFrame(gameLoop);
 }
 
-// 启动游戏
-window.onload = init; 
+// 确保在页面完全加载后再初始化游戏
+window.addEventListener('load', function() {
+    init();
+    // 立即进行第一次渲染
+    drawGame();
+});
+
+// 在游戏初始化时添加错误处理
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+    return false;
+};
+
+// 在初始化时获取元素
+function initElements() {
+    gameElements.canvas = document.getElementById('canvas1');
+    gameElements.ctx = gameElements.canvas.getContext('2d');
+    gameElements.settingsBtn = document.getElementById('settingsBtn');
+    gameElements.settingsPanel = document.getElementById('settingsPanel');
+    // ... 获取其他元素
+}
+
+// 添加游戏状态保存
+function saveGameState() {
+    const gameState = {
+        snake: snake,
+        food: food,
+        score: score,
+        direction: direction
+    };
+    localStorage.setItem('gameState', JSON.stringify(gameState));
+}
+
+// 添加游戏状态恢复
+function restoreGameState() {
+    const savedState = localStorage.getItem('gameState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        snake = state.snake;
+        food = state.food;
+        score = state.score;
+        direction = state.direction;
+    }
+} 
