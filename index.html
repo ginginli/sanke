@@ -60,6 +60,31 @@
             border-radius: 5px;
             z-index: 1000;
         }
+        
+        /* 添加控制按钮的样式 */
+        .control-panel button {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+        }
+        
+        .control-panel button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .setting-item {
+            margin: 10px 0;
+        }
+        
+        .setting-item label {
+            display: inline-block;
+            width: 150px;
+        }
     </style>
 
     <!-- Google tag (gtag.js) -->
@@ -87,6 +112,54 @@
     <!-- 游戏区域 -->
     <div class="game-container">
         <canvas id="canvas1"></canvas>
+        
+        <!-- 添加设置按钮 -->
+        <button id="settingsBtn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px;">⚙️ Settings</button>
+        
+        <!-- 设置面板 -->
+        <div id="settingsPanel" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; color: white;">
+            <h3>Game Settings</h3>
+            
+            <!-- 速度控制 -->
+            <div class="setting-item">
+                <label for="gameSpeed">Game Speed:</label>
+                <input type="range" id="gameSpeed" min="50" max="200" step="10">
+                <span id="speedValue">100ms</span>
+            </div>
+            
+            <!-- 网格大小 -->
+            <div class="setting-item">
+                <label for="gridSize">Grid Size:</label>
+                <select id="gridSize">
+                    <option value="15">15x15</option>
+                    <option value="20" selected>20x20</option>
+                    <option value="25">25x25</option>
+                    <option value="30">30x30</option>
+                </select>
+            </div>
+            
+            <!-- 边界模式 -->
+            <div class="setting-item">
+                <label for="borderMode">Border Mode:</label>
+                <select id="borderMode">
+                    <option value="die">Die on collision</option>
+                    <option value="wrap">Wrap around</option>
+                    <option value="bounce">Bounce</option>
+                </select>
+            </div>
+            
+            <!-- 坐标显示控制 -->
+            <div class="setting-item">
+                <label for="showCoords">Show Coordinates:</label>
+                <input type="checkbox" id="showCoords" checked>
+            </div>
+            
+            <!-- 按钮 -->
+            <div class="setting-buttons">
+                <button id="saveSettings">Save</button>
+                <button id="closeSettings">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- 引入本地JS -->
