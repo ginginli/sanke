@@ -71,8 +71,13 @@
 
     <!-- 游戏区域 -->
     <div class="game-container">
+        <!-- 加载提示 -->
+        <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;">
+            Loading game...
+        </div>
+        
         <iframe 
-            src="https://scratch.mit.edu/projects/226445813/embed" 
+            id="gameFrame"
             allowtransparency="true" 
             frameborder="0" 
             scrolling="no" 
@@ -95,7 +100,7 @@
         <div class="faq-item" style="margin-bottom: 20px;">
             <h3 style="color: #444; margin-bottom: 10px; font-size: 18px;">What is Snake Game Unblocked?</h3>
             <p style="line-height: 1.6; color: #666;">
-                Snake Game Unblocked refers to the classic arcade game of Snake that can be played online without restrictions, often in a school or workplace setting. Unblocked versions typically allow players to enjoy the game freely without any network blocks or restrictions imposed by administrators.
+                Snake Game Unblocked refers to the classic arcade game of Snake that can be played online without restrictions, often in a classroom or workplace setting. Unblocked versions typically allow players to enjoy the game freely without any network blocks or restrictions imposed by administrators.
             </p>
         </div>
 
@@ -118,5 +123,59 @@
     <footer>
         <p>Snake Game Unblocked </p>
     </footer>
+
+    <script>
+        // 游戏源列表 - 主要使用Scratch，但准备备用源
+        const gameSources = [
+            'https://scratch.mit.edu/projects/226445813/embed',    // Scratch主源
+            'https://scratch.mit.edu/projects/478297682/embed',    // Scratch备用1
+            'https://scratch.mit.edu/projects/347896000/embed',    // Scratch备用2
+            'https://scratch.mit.edu/projects/494018413/embed',    // Scratch备用3
+            'https://scratch.mit.edu/projects/319479695/embed',    // Scratch备用4
+            'https://playsnake.co.uk/embed'                        // 非Scratch备用
+        ];
+
+        let currentSourceIndex = 0;
+        const loadingElement = document.getElementById('loading');
+
+        function loadGame(sourceIndex) {
+            const gameFrame = document.getElementById('gameFrame');
+            
+            // 显示加载提示
+            loadingElement.style.display = 'block';
+            loadingElement.innerHTML = 'Loading Scratch game... Please wait a moment.';
+            
+            // 设置更长的超时时间，因为Scratch加载需要更多时间
+            const timeoutDuration = 10000; // 10秒
+            const loadTimeout = setTimeout(() => {
+                if (currentSourceIndex < gameSources.length - 1) {
+                    // 如果还有Scratch备用源，尝试下一个
+                    currentSourceIndex++;
+                    loadGame(currentSourceIndex);
+                }
+            }, timeoutDuration);
+
+            // 加载游戏
+            gameFrame.src = gameSources[sourceIndex];
+
+            // 加载完成时的处理
+            gameFrame.onload = () => {
+                clearTimeout(loadTimeout);
+                loadingElement.style.display = 'none';
+            };
+
+            // 错误处理
+            gameFrame.onerror = () => {
+                clearTimeout(loadTimeout);
+                if (currentSourceIndex < gameSources.length - 1) {
+                    currentSourceIndex++;
+                    loadGame(currentSourceIndex);
+                }
+            };
+        }
+
+        // 初始加载
+        loadGame(0);
+    </script>
 </body>
 </html> 
