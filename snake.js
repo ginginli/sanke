@@ -34,7 +34,8 @@ const gameElements = {
     ctx: null,
     settingsBtn: null,
     settingsPanel: null,
-    speedValue: null
+    speedValue: null,
+    gameLoop: null  // 添加游戏循环引用
 };
 
 // 添加缓存和优化相关的变量
@@ -90,33 +91,47 @@ function applySettings(settings) {
 
 // 初始化游戏
 function initGame() {
-    // 设置画布并自适应屏幕
-    canvas = document.getElementById('canvas1');
+    // 初始化DOM元素
+    if (!initElements()) {
+        console.error('Failed to initialize game elements');
+        return;
+    }
+    
+    // 设置画布尺寸
     resizeCanvas();
-    ctx = canvas.getContext('2d');
-
-    // 计算网格数量
-    gridWidth = Math.floor(canvas.width / gridSize);
-    gridHeight = Math.floor(canvas.height / gridSize);
-
-    // 初始化蛇
+    
+    // 初始化游戏状态
     snake = [
         {x: 5, y: 5},
         {x: 4, y: 5},
         {x: 3, y: 5}
     ];
+    
+    direction = 'right';
+    newDirection = 'right';
+    score = 0;
+    isPaused = false;
+    lastFrameTime = 0;
 
+    // 创建食物
     createFood();
+    
+    // 加载设置
+    loadSettings();
+    
+    // 初始化界面
+    initSettingsPanel();
+    addControlButtons();
+    addSettingsOptions();
 
     // 添加事件监听
     document.addEventListener('keydown', handleKeyPress);
     window.addEventListener('resize', resizeCanvas);
-    
-    // 添加触摸控制
-    canvas.addEventListener('touchstart', handleTouchStart, false);
-    canvas.addEventListener('touchmove', handleTouchMove, false);
+    gameElements.canvas.addEventListener('touchstart', handleTouchStart, false);
+    gameElements.canvas.addEventListener('touchmove', handleTouchMove, false);
 
-    gameLoop = setInterval(updateGame, gameSpeed);
+    // 开始游戏循环
+    requestAnimationFrame(gameLoop);
 }
 
 // 自适应屏幕大小
@@ -124,10 +139,16 @@ function resizeCanvas() {
     if (!gameElements.canvas) return;
     
     const maxSize = Math.min(window.innerWidth - 20, window.innerHeight - 100);
-    gameElements.canvas.width = Math.floor(maxSize / gridSize) * gridSize;
-    gameElements.canvas.height = gameElements.canvas.width;
-    gridWidth = Math.floor(gameElements.canvas.width / gridSize);
-    gridHeight = Math.floor(gameElements.canvas.height / gridSize);
+    const newSize = Math.floor(maxSize / gridSize) * gridSize;
+    
+    gameElements.canvas.width = newSize;
+    gameElements.canvas.height = newSize;
+    
+    gridWidth = Math.floor(newSize / gridSize);
+    gridHeight = gridWidth;  // 保持正方形
+    
+    // 重新创建背景缓存
+    cache.background = null;
 }
 
 // 触摸控制
@@ -293,7 +314,10 @@ function drawGame() {
     const ctx = gameElements.ctx;
     const canvas = gameElements.canvas;
     
-    if (!ctx || !canvas) return;
+    if (!ctx || !canvas) {
+        console.error('Canvas context not available');
+        return;
+    }
 
     // 使用缓存的背景
     if (!cache.background) {
@@ -393,7 +417,13 @@ function updateGame() {
 
 // 游戏结束
 function gameOver() {
-    clearInterval(gameLoop);
+    isPaused = true;  // 使用暂停标志替代 clearInterval
+    
+    const ctx = gameElements.ctx;
+    const canvas = gameElements.canvas;
+    
+    if (!ctx || !canvas) return;
+    
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#fff';
@@ -429,17 +459,16 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 暂停游戏
+// 修改 pauseGame 和 resumeGame 函数
 function pauseGame() {
     isPaused = true;
-    clearInterval(gameLoop);
     drawGame(); // 立即重绘以显示暂停菜单
 }
 
-// 继续游戏
 function resumeGame() {
     isPaused = false;
-    gameLoop = setInterval(updateGame, gameSpeed);
+    lastFrameTime = 0;
+    requestAnimationFrame(gameLoop);
 }
 
 // 在init函数末尾添加设置面板的事件监听
@@ -537,7 +566,7 @@ function addSettingsOptions() {
     });
 }
 
-// 游戏循环
+// 删除第一个 gameLoop 定义，只保留这一个完整版本
 function gameLoop(timestamp) {
     if (!gameElements.ctx || !gameElements.canvas) return;
     
@@ -558,59 +587,9 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
-// 修改初始化函数
-function init() {
-    // 初始化DOM元素
-    if (!initElements()) {
-        console.error('Failed to initialize game elements');
-        return;
-    }
-    
-    // 设置画布尺寸
-    resizeCanvas();
-    
-    // 初始化游戏状态
-    snake = [
-        {x: 5, y: 5},
-        {x: 4, y: 5},
-        {x: 3, y: 5}
-    ];
-    
-    direction = 'right';
-    newDirection = 'right';
-    score = 0;
-    isPaused = false;
-
-    // 创建食物
-    createFood();
-    
-    // 加载设置
-    loadSettings();
-    
-    // 初始化界面
-    initSettingsPanel();
-    addControlButtons();
-    addSettingsOptions();
-
-    // 添加事件监听
-    document.addEventListener('keydown', handleKeyPress);
-    window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('touchstart', handleTouchStart, false);
-    canvas.addEventListener('touchmove', handleTouchMove, false);
-
-    // 立即进行第一次渲染
-    drawGame();
-    
-    // 开始游戏循环
-    lastFrameTime = 0;
-    requestAnimationFrame(gameLoop);
-}
-
 // 确保在页面完全加载后再初始化游戏
 window.addEventListener('load', function() {
-    init();
-    // 立即进行第一次渲染
-    drawGame();
+    initGame();  // 只调用一次初始化
 });
 
 // 在游戏初始化时添加错误处理
@@ -621,27 +600,21 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 
 // 在初始化时获取元素
 function initElements() {
-    // 获取canvas元素
     gameElements.canvas = document.getElementById('canvas1');
     if (!gameElements.canvas) {
         console.error('Canvas element not found');
         return false;
     }
     
-    // 获取canvas上下文
     gameElements.ctx = gameElements.canvas.getContext('2d');
     if (!gameElements.ctx) {
         console.error('Could not get canvas context');
         return false;
     }
     
-    // 同时更新全局变量
-    canvas = gameElements.canvas;
-    ctx = gameElements.ctx;
-    
-    // 获取其他元素
     gameElements.settingsBtn = document.getElementById('settingsBtn');
     gameElements.settingsPanel = document.getElementById('settingsPanel');
+    gameElements.speedValue = document.getElementById('speedValue');
     
     return true;
 }
