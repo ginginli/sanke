@@ -139,68 +139,12 @@
 
     <!-- 游戏区域 -->
     <div class="game-container">
-        <iframe 
-            height="600" 
-            style="width: 100%;" 
-            scrolling="no" 
-            title="Snake Game - CSS Renderer" 
-            src="https://codepen.io/jackrugile/embed/bGRWbK?default-tab=result" 
-            frameborder="no" 
-            loading="lazy" 
-            allowtransparency="true" 
-            allowfullscreen="true">
-            See the Pen <a href="https://codepen.io/jackrugile/pen/bGRWbK">
+        <p class="codepen" data-height="300" data-default-tab="html,result" data-slug-hash="bGRWbK" data-pen-title="Snake Game - CSS Renderer" data-user="jackrugile" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+            <span>See the Pen <a href="https://codepen.io/jackrugile/pen/bGRWbK">
             Snake Game - CSS Renderer</a> by Jack Rugile (<a href="https://codepen.io/jackrugile">@jackrugile</a>)
-            on <a href="https://codepen.io">CodePen</a>.
-        </iframe>
-        
-        <!-- 添加设置按钮 -->
-        <button id="settingsBtn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px;">⚙️ Settings</button>
-        
-        <!-- 设置面板 -->
-        <div id="settingsPanel" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; color: white;">
-            <h3>Game Settings</h3>
-            
-            <!-- 速度控制 -->
-            <div class="setting-item">
-                <label for="gameSpeed">Game Speed:</label>
-                <input type="range" id="gameSpeed" min="50" max="200" step="10">
-                <span id="speedValue">100ms</span>
-            </div>
-            
-            <!-- 网格大小 -->
-            <div class="setting-item">
-                <label for="gridSize">Grid Size:</label>
-                <select id="gridSize">
-                    <option value="15">15x15</option>
-                    <option value="20" selected>20x20</option>
-                    <option value="25">25x25</option>
-                    <option value="30">30x30</option>
-                </select>
-            </div>
-            
-            <!-- 边界模式 -->
-            <div class="setting-item">
-                <label for="borderMode">Border Mode:</label>
-                <select id="borderMode">
-                    <option value="die">Die on collision</option>
-                    <option value="wrap">Wrap around</option>
-                    <option value="bounce">Bounce</option>
-                </select>
-            </div>
-            
-            <!-- 坐标显示控制 -->
-            <div class="setting-item">
-                <label for="showCoords">Show Coordinates:</label>
-                <input type="checkbox" id="showCoords" checked>
-            </div>
-            
-            <!-- 按钮 -->
-            <div class="setting-buttons">
-                <button id="saveSettings">Save</button>
-                <button id="closeSettings">Close</button>
-            </div>
-        </div>
+            on <a href="https://codepen.io">CodePen</a>.</span>
+        </p>
+        <script async src="https://public.codepenassets.com/embed/index.js"></script>
     </div>
 
     <!-- 游戏介绍 -->
