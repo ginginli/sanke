@@ -101,6 +101,19 @@
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        iframe {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
     </style>
 
 <!-- Google tag (gtag.js) -->
@@ -126,7 +139,20 @@
 
     <!-- 游戏区域 -->
     <div class="game-container">
-        <canvas id="canvas1"></canvas>
+        <iframe 
+            height="600" 
+            style="width: 100%;" 
+            scrolling="no" 
+            title="Snake Game - CSS Renderer" 
+            src="https://codepen.io/jackrugile/embed/bGRWbK?default-tab=result" 
+            frameborder="no" 
+            loading="lazy" 
+            allowtransparency="true" 
+            allowfullscreen="true">
+            See the Pen <a href="https://codepen.io/jackrugile/pen/bGRWbK">
+            Snake Game - CSS Renderer</a> by Jack Rugile (<a href="https://codepen.io/jackrugile">@jackrugile</a>)
+            on <a href="https://codepen.io">CodePen</a>.
+        </iframe>
         
         <!-- 添加设置按钮 -->
         <button id="settingsBtn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px;">⚙️ Settings</button>
